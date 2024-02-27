@@ -1,0 +1,12 @@
+fc-query-executor:
+  fhir_servers: ["server1", "server2"]
+  input:
+    query:
+      {
+        "4544-3-0": { "logical_operator": "and", "operator": "<", "value": "50" },
+        "4544-3-1": { "operator": ">=", "value": "30" },
+        "39156-5-0": { "logical_operator": "and", "operator": "<=", "value": "28" },
+        "39156-5-1": { "operator": ">", "value": "15" },
+      }
+  results:
+    file: results.csv
