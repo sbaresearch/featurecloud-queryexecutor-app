@@ -1,4 +1,4 @@
- Byte-compiled / optimized / DLL files
+# Byte-compiled / optimized / DLL files
 *__pycache__
 *.py[cod]
 
@@ -153,5 +153,7 @@ cython_debug/
 .vscode
 
 # Featurecloud
+data/shared_dir
 data/tests
+data/workflows
 data/site_info.json
