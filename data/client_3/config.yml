@@ -1,4 +1,5 @@
 fc-query-executor:
+  client: "client_3"
   fhir_servers: ["server1", "server2"]
   input:
     query:

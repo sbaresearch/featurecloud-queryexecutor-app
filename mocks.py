@@ -8,11 +8,12 @@ import logging
 import os
 
 
-def mock_fhir_fetch(resource_type="Observation", servers=[]) -> dict:
+def mock_fhir_fetch(client, resource_type="Observation", servers=[]) -> dict:
     """
     Mock responses for provided server list.
 
     Parameters:
+        client (str): Name representing where client-specific data is stored.
         resource_type (str): FHIR resource type to search for.
         servers (list): List of FHIR servers this client can connect to.
 
@@ -23,12 +24,12 @@ def mock_fhir_fetch(resource_type="Observation", servers=[]) -> dict:
         logging.warn("No servers were configured for this client.")
         return
 
-    INPUT_DIR = os.path.join("/", "mnt", "input")
-    DATA_DIR = "mock_fhir_data"
+    DATA_DIR = os.path.join("/", "app", "data", client, "mock_fhir_data")
     response = {}
 
     for server in servers:
-        server_path = os.path.join(INPUT_DIR, DATA_DIR, server)
+        server_path = os.path.join(DATA_DIR, server)
+
         response.update({server: []})
 
         for filename in os.listdir(server_path):

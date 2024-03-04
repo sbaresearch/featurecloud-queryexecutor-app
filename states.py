@@ -39,6 +39,7 @@ class TransformState(State):
         self.read_config()
         self.finalize_config()
 
+        client = self.config["client"]
         fhir_server_list = self.config["fhir_servers"]
         query = self.config["input"]["query"]
 
@@ -51,6 +52,7 @@ class TransformState(State):
         result_file = f"{self.output_dir}/{self.config['results']['file']}"
 
         # Register variables for next states
+        self.store("client", client)
         self.store("fhir_server_list", fhir_server_list)
         self.store("query", query)
         self.store("query_uri_string", query_uri_string)
@@ -64,11 +66,13 @@ class FetchState(AppState):
         self.register_transition(WRITE_STATE)
 
     def run(self):
-        # Here, we would need to use the transformed query to make an HTTP call to the FHIR servers.
-        # For testing purposes we are mocking the request.
-        # We also assume that only Observations are being searched
+        # NOTE: Here, we would need to use the transformed query to make an HTTP call
+        # to the FHIR servers. For testing purposes we are mocking the request.
+        # We also assume that only Observations are being searched.
         responses = mock_fhir_fetch(
-            resource_type="Observation", servers=self.load("fhir_server_list")
+            client=self.load("client"),
+            resource_type="Observation",
+            servers=self.load("fhir_server_list"),
         )
         # TODO: here the actual query URI string must be passed
         filtered_results = filter_results(self.load("query"), responses)
@@ -117,7 +121,7 @@ class AgreggateState(AppState):
 
         # to properly get the data, we have to convert it to a np array
         data_np = [np.array(d) for d in data]
-        # self.log(f"data np {data_np}")
+
         if not dump_all_to_csv(data=data_np):
             raise RuntimeError("Failed to write aggregated results.")
 
