@@ -6,6 +6,7 @@
 import csv
 
 from numpy import ndenumerate
+from pandas import read_csv
 
 
 def transform_to_fhir_query(data):
@@ -207,6 +208,45 @@ def dump_all_to_csv(
                                 writer.writerow(entry.values())
     except Exception as e:
         print(f"Error writing to CSV: {e}")
+        return False
+
+    return True
+
+
+def sample_data(
+    input_file="/mnt/output/aggregated_results.csv",
+    output_file="/mnt/output/test_data.csv",
+    **kwargs,
+):
+    """
+    Randomly samples a portion of the input training data to create a test dataset.
+
+    Parameters:
+        input_file (str): Path to the input CSV file containing the training data. Default is "aggregated_results.csv".
+        output_file (str): Path to save the sampled test data as a CSV file. Default is "test_data.csv".
+        **kwargs: Additional keyword arguments to be passed to the pandas DataFrame `sample` method.
+            - frac (float): Fraction of the training data to sample. Default is 0.2 (20%).
+            - random_state (int): Seed for random number generation to ensure reproducibility. Default is 42.
+            - Additional arguments accepted by pandas DataFrame `sample` method.
+
+    Returns:
+        bool: True if the test data was successfully sampled and saved, False otherwise.
+
+    Example:
+        # Sample 30% of the training data and save as test_data.csv
+        sample_data(input_file="train_data.csv", output_file="test_data.csv", frac=0.3, random_state=123)
+    """
+    try:
+        train_data = read_csv(input_file)
+
+        frac = kwargs.get("frac") or 0.2
+        random_state = kwargs.get("random state") or 42
+
+        # sample a portion of the training data for the test data
+        test_data = train_data.sample(frac=frac, random_state=random_state, **kwargs)
+        test_data.to_csv(output_file, index=False)
+    except Exception as e:
+        print(f"Error occurred while sampling and saving test data: {e}")
         return False
 
     return True

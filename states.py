@@ -13,6 +13,7 @@ from utils import (
     dump_all_to_csv,
     filter_results,
     group_results_per_server,
+    sample_data,
     transform_to_fhir_query,
     write_to_csv,
 )
@@ -22,6 +23,7 @@ INITIAL_STATE = "initial"
 FETCH_DATA_STATE = "fetch"
 WRITE_STATE = "write"
 AGGREGATE_STATE = "aggregate"
+GENERATE_TEST_DATA_STATE = "generate_test_data"
 TERMINAL_STATE = "terminal"
 
 INPUT_DIR = "/mnt/input"
@@ -100,7 +102,8 @@ class WriteResultsState(AppState):
         if not write_to_csv(filtered_results, result_file):
             raise RuntimeError("Failed to write results.")
 
-        self.log("Writing local results is done, sending data to coordinator.")
+        if not self.is_coordinator:
+            self.log("Writing local results is done, sending data to coordinator.")
         self.send_data_to_coordinator(data={self.id: filtered_results})
 
         if self.is_coordinator:
@@ -114,7 +117,7 @@ class WriteResultsState(AppState):
 class AgreggateState(AppState):
 
     def register(self):
-        self.register_transition(TERMINAL_STATE, Role.COORDINATOR)
+        self.register_transition(GENERATE_TEST_DATA_STATE, Role.COORDINATOR)
 
     def run(self):
         data = self.gather_data()
@@ -125,4 +128,19 @@ class AgreggateState(AppState):
         if not dump_all_to_csv(data=data_np):
             raise RuntimeError("Failed to write aggregated results.")
 
+        self.log("Aggregated results successfully, transitioning to next state.")
+        return GENERATE_TEST_DATA_STATE
+
+
+@app_state(GENERATE_TEST_DATA_STATE, role=Role.COORDINATOR)
+class GenerateTestDataState(AppState):
+
+    def register(self):
+        self.register_transition(TERMINAL_STATE, Role.COORDINATOR)
+
+    def run(self):
+        if not sample_data():
+            raise RuntimeError("Failed to generate test data.")
+
+        self.log("Generated test data successfully, transitioning to terminal state.")
         return TERMINAL_STATE
