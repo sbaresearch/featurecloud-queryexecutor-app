@@ -83,33 +83,44 @@ def filter_results(payload: dict, responses: dict) -> dict:
     for server, json_list in responses.items():
         filtered_list = []
 
-        for key, conditions in payload.items():
-            # Remove trailing hyphens (these are denoting the index number)
-            key_prefix = "-".join(key.rsplit("-", 1)[:-1])
-            operator = conditions["operator"]
-            value = conditions["value"]
-            logical_operator = conditions.get("logical_operator")
+        for item in json_list:
+            # Denotes success of all operators in the payload (for the current item)
+            satisfied_all = True
+            resource = item.get("resource", {})
+            code = resource.get("code", {}).get("coding", [{}])[0].get("code", "")
+            display = resource.get("code", {}).get("coding", [{}])[0].get("display", "")
+            numeric_value = resource.get("valueQuantity", {}).get("value", "")
+            unit = resource.get("valueQuantity", {}).get("unit", "")
+            # Only 'issued' is at the top level
+            issued = resource.get("issued")
 
-            for item in json_list:
-                resource = item.get("resource", {})
-                code = resource.get("code", {}).get("coding", [{}])[0].get("code", "")
-                display = (
-                    resource.get("code", {}).get("coding", [{}])[0].get("display", "")
-                )
-                numeric_value = resource.get("valueQuantity", {}).get("value", "")
-                unit = resource.get("valueQuantity", {}).get("unit", "")
-                issued = resource.get("issued")
+            # Traverse the payload to check each operator, value and logical operators in between.
+            for key, conditions in payload.items():
+
+                # Remove trailing hyphens (these are denoting the index number)
+                key_prefix = "-".join(key.rsplit("-", 1)[:-1])
+                operator = conditions.get("operator", "")
+                value = conditions.get("value", "")
+                # TODO: This should be used
+                logical_operator = conditions.get("logical_operator")
 
                 # Check if the code matches the key
                 if code == key_prefix:
-                    if check_numeric_value(numeric_value, operator, float(value)):
-                        filtered_item = {
-                            "code": code,
-                            "display": display,
-                            "numeric_value": numeric_value,
-                            "unit": unit,
-                            "issued": issued,
-                        }
+                    satisfied = check_numeric_value(
+                        numeric_value, operator, float(value)
+                    )
+                    # All operators satisfied based on the current one
+                    satisfied_all = satisfied_all and satisfied
+
+                    filtered_item = {
+                        "code": code,
+                        "display": display,
+                        "value": numeric_value,
+                        "unit": unit,
+                        "issued": issued,
+                    }
+                    # Add the item, if previous operator succeeded and if item wasn't already added.
+                    if satisfied_all and filtered_item not in filtered_list:
                         filtered_list.append(filtered_item)
 
         filtered_dict[server] = filtered_list
