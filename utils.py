@@ -128,17 +128,31 @@ def filter_results(payload: dict, responses: dict) -> dict:
     return filtered_dict
 
 
-def group_results_per_server(results: dict) -> dict:
+def group_results(results: dict, suppress_limit: int = 20) -> dict:
     """
-    Group the results per server and count the number of results for each server.
+    Group the results per server, label servers as "insufficient" if the count is below the `suppress_limit`,
+    and round the number of results if not labeled as "insufficient".
 
     Parameters:
         results (dict): A dictionary where keys are server names and values are lists of results.
-
+        suppress_limit (int, optional): The limit under which the results will be labeled as "insufficient"
+        and not rounded. Defaults to 20.
     Returns:
-        dict: A dictionary where keys are server names and values are the number of results for each server.
+        dict: A dictionary where keys are server names and values are either the rounded number of results for
+        each server or "insufficient" if the count is below the `suppress_limit`.
     """
-    return {server: len(result_list) for server, result_list in results.items()}
+    grouped_results = {
+        server: len(result_list) for server, result_list in results.items()
+    }
+    grouped_and_labeled = {
+        server: "insufficient" if count <= suppress_limit else count
+        for server, count in grouped_results.items()
+    }
+    rounded_results = {
+        server: (round(count, -1) if count != "insufficient" else count)
+        for server, count in grouped_and_labeled.items()
+    }
+    return rounded_results
 
 
 def write_to_csv(filtered_dict, csv_file_path):

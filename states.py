@@ -12,7 +12,7 @@ from mocks import mock_fhir_fetch
 from utils import (
     dump_all_to_csv,
     filter_results,
-    group_results_per_server,
+    group_results,
     sample_data,
     transform_to_fhir_query,
     write_to_csv,
@@ -78,9 +78,8 @@ class FetchState(AppState):
         )
         # TODO: here the actual query URI string must be passed
         filtered_results = filter_results(self.load("query"), responses)
-
         # group counts per server
-        result_count = group_results_per_server(filtered_results)
+        result_count = group_results(filtered_results)
         for server, count in result_count.items():
             self.log(f"Server {server}: {count} results")
 
